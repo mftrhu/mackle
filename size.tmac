@@ -1,0 +1,32 @@
+\# -*- nroff -*-
+\# Paper size macros
+.nr si*width 8.27i
+.nr si*height 11.7i
+
+\# Internal variables
+.nr @si*paper-set 0
+
+.de A4
+\#.  po 0i
+\#.  ll 8.27i
+\#.  lt 8.27i
+\#.  pl 11.7i
+.  nr si*width 8.27i
+.  nr si*height 11.7i
+..
+
+.de PaperSize
+.  nr @si*paper-set +1
+.  if |\\$1|A4| .A4
+.  po 0i
+\# Set width - line (and title) length
+.  ll \\n[si*width]u
+.  lt \\n[si*width]u
+\# Set page length
+.  pl \\n[si*height]u
+\#.  tm Paper size set: \\n[si*width] \\n[si*height]
+..
+
+.de @si*Init
+.  if (\\n[@si*paper-set] = 0) .PaperSize A4
+..

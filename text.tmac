@@ -1,0 +1,234 @@
+\# -*- nroff -*-
+\# Module tx - General text formatting
+
+\# External variables
+.Number tx*header-increase 2p
+.Number tx*smallest-header 4
+.Number tx*first-indent 2n
+.Number tx*quote-indent 4n
+.Number tx*quote-right-margin 4n
+
+\# Internal variables
+.Number @tx*paragraph-counter 1
+.Number @tx*after-header 0
+.Number @tx*already-padded 0
+
+\# Headings
+
+.Macro SkipIndent
+.  nr @tx*after-header 0
+..
+
+.Macro Heading
+.  @pdf*Heading \\$1 "\\$2"
+\#.  ps +(u;(\\n[tx*smallest-header] - \\$1) * \\n[tx*header-increase]u)
+.  @SetStyle H\\$1
+.  nr @tx*header-spacing (u;\\n[.ps] / 100 * 25)
+\#.  pvs +\\n[@tx*header-spacing]u
+.  if (\\n[@tx*already-padded]>0) \{\
+.    sp (u;\\n[@tx*header-spacing]*2)
+.    nr @tx*already-padded 0
+.  \}
+.  nop \\f[B]\\$2\\f[P]
+.  br
+.  @ResetStyle
+\#.  ps
+.  sp \\n[@tx*header-spacing]u 
+.  SkipIndent
+..
+
+.Macro @tx*MakeStyles
+.  nr i 0
+.  while (\\n[i] < \\n[tx*smallest-header]) \{\
+.    nr i +1
+.    nr @tx*h-size (u;\\n[BodySize]p)
+.    nr @tx*h-size +(u;(\\n[tx*smallest-header]-\\n[i])*\\n[tx*header-increase]u)
+.    nr @tx*h-size (\\n[@tx*h-size]/1000)
+.    SetStyle H\\n[i] B \\n[@tx*h-size] +2 black left
+.    Macro H\\n[i] /Macro
+.      Heading \\n[i] \\\\$*
+.    /Macro
+.  \}
+..
+
+.Alias H Heading
+
+\# Paragraphs
+
+.Macro @tx*BeforeParagraph
+.  br
+.  if \\w|\\n[.z]| \{\
+.    nop \!.br
+.  \}
+..
+
+.Macro @tx*AfterParagraph
+.  nr @tx*paragraph-counter +1
+.  nr @tx*after-header +1
+\# Orphans control
+.  ne 2
+..
+
+.Macro Paragraph
+.  @tx*BeforeParagraph
+.  if (\\n[@tx*after-header] > 0) \{\
+.    ti +\\n[tx*first-indent]u
+.  \}
+.  @tx*AfterParagraph
+..
+
+.Macro CountedParagraph
+.  @tx*BeforeParagraph
+\\[sc]\\n[@tx*paragraph-counter].
+.  @tx*AfterParagraph
+..
+
+.Macro LabeledParagraph
+.  @tx*BeforeParagraph
+'  if \\w|\\$1| \{
+'    ds @tx*par-label \\fI\\v@-1p@\\s-2\\$1\\s+2\\fP
+'    ds @tx*par-n \\fI\\s-2M\\s+2\\fP
+'    nop \\Z|\\h'-(u;\\w"\\*[@tx*par-label]"+\\w"\\*[@tx*par-n]")'\\*[@tx*par-label]|
+\#'    nop \\h|-(u;\\w"\\*[@tx*par-n]"*2)|
+'  \}
+.  @tx*AfterParagraph
+..
+
+.Alias P Paragraph
+.Alias PP Paragraph
+.Alias CP CountedParagraph
+.Alias LP LabeledParagraph
+
+\# Quotes
+
+.Macro Quote
+.  if \\w|\\$1| \{\
+.    ds @tx*quote-byline "\\$1
+.    if \\w|\\$2| \{\
+.      ds @tx*quote-byline "\\*[@tx*quote-byline], \\f[I]\\$2\\f[P]
+.    \}
+.  \}
+.  sp
+.  in \\n[tx*quote-indent]u
+.  ll -\\n[tx*quote-right-margin]u
+.  nr @tx*after-header 0
+..
+
+.Macro /Quote
+.  if \\w|\\*[@tx*quote-byline]| \{\
+.    br
+.    rj 10
+.    nop \(em \\*[@tx*quote-byline]
+.    rj 0
+.  \}
+.  ll
+.  in
+.  sp
+.  SkipIndent
+..
+
+\# Highlighting
+
+.Macro Roman
+.  ie (\\n[.$] = 0) .nop \\f[R]
+.  el .nop \\$3\\f[R]\\$1\\f[P]\\$2
+..
+
+.Macro Italic
+.  ie (\\n[.$] = 0) .nop \\f[I]
+.  el .nop \\$3\\f[I]\\$1\\f[P]\\$2
+..
+
+.Macro Bold
+.  ie (\\n[.$] = 0) .nop \\f[B]
+.  el .nop \\$3\\f[B]\\$1\\f[P]\\$2
+..
+
+.Macro BoldItalic
+.  ie (\\n[.$] = 0) .nop \\f[BI]
+.  el .nop \\$3\\f[BI]\\$1\\f[P]\\$2
+..
+
+.Macro ConstantWidth
+.  ie (\\n[.$] = 0) .nop \\f[CR]
+.  el .nop \\$3\\f[CR]\\$1\\f[P]\\$2
+..
+
+.Alias R Roman
+.Alias I Italic
+.Alias B Bold
+.Alias BI BoldItalic
+.Alias CW ConstantWidth
+
+\# Superscript, subscript
+
+.String { \\v|-0.3v|\\s[-2]
+.String } \\v|+0.3v|\\s[+2]
+.String < \\v|+0.3v|\\s[-2]
+.String > \\v|-0.3v|\\s[+2]
+
+\# Smallcaps macro originally created by Ted Harding and found on
+\# <http://www.troff.org/TheGroffFriendsHowto.pdf>
+.de Smallcaps
+.nr .sc.ps (\\n[.s]*75/100)
+.nr .cap.PS \\n[.s]
+.char a \s[\\n[.sc.ps]]A\s[\\n[.cap.PS]]
+.char b \s[\\n[.sc.ps]]B\s[\\n[.cap.PS]]
+.char c \s[\\n[.sc.ps]]C\s[\\n[.cap.PS]]
+.char d \s[\\n[.sc.ps]]D\s[\\n[.cap.PS]]
+.char e \s[\\n[.sc.ps]]E\s[\\n[.cap.PS]]
+.char f \s[\\n[.sc.ps]]F\s[\\n[.cap.PS]]
+.char g \s[\\n[.sc.ps]]G\s[\\n[.cap.PS]]
+.char h \s[\\n[.sc.ps]]H\s[\\n[.cap.PS]]
+.char i \s[\\n[.sc.ps]]I\s[\\n[.cap.PS]]
+.char j \s[\\n[.sc.ps]]J\s[\\n[.cap.PS]]
+.char k \s[\\n[.sc.ps]]K\s[\\n[.cap.PS]]
+.char l \s[\\n[.sc.ps]]L\s[\\n[.cap.PS]]
+.char m \s[\\n[.sc.ps]]M\s[\\n[.cap.PS]]
+.char n \s[\\n[.sc.ps]]N\s[\\n[.cap.PS]]
+.char o \s[\\n[.sc.ps]]O\s[\\n[.cap.PS]]
+.char p \s[\\n[.sc.ps]]P\s[\\n[.cap.PS]]
+.char q \s[\\n[.sc.ps]]Q\s[\\n[.cap.PS]]
+.char r \s[\\n[.sc.ps]]R\s[\\n[.cap.PS]]
+.char s \s[\\n[.sc.ps]]S\s[\\n[.cap.PS]]
+.char t \s[\\n[.sc.ps]]T\s[\\n[.cap.PS]]
+.char u \s[\\n[.sc.ps]]U\s[\\n[.cap.PS]]
+.char v \s[\\n[.sc.ps]]V\s[\\n[.cap.PS]]
+.char w \s[\\n[.sc.ps]]W\s[\\n[.cap.PS]]
+.char x \s[\\n[.sc.ps]]X\s[\\n[.cap.PS]]
+.char y \s[\\n[.sc.ps]]Y\s[\\n[.cap.PS]]
+.char z \s[\\n[.sc.ps]]Z\s[\\n[.cap.PS]]
+..
+
+.de /Smallcaps
+.rchar a b c d e f g h i j k l m n o p q r s t u v w x y z
+..
+
+\# Other stuff
+
+.ig NotWorking
+.de Dropcap
+.  nr @tx*old-size \\n[.ps]p
+.  nr @tx*new-size (u;\\n[.ps] * \\$2)
+.  ds @tx*cap \\s|(p;\\n[@tx*new-size]u*\\$2)u|\\$1\\s
+'  nop \\Z|\\*[@tx*cap]|
+'  ti \\w|\\*[@tx*cap]|u
+..
+.NotWorking
+
+.Macro HorizontalRule
+.  br
+.  nop \\D|p \\n[.l]u 0|
+.  br
+..
+.Alias HR HorizontalRule
+
+.Macro Finis
+.  sp
+.  ce
+.  nop \(em \\*[$END] \(em
+..
+
+.Macro @tx*Init
+.  @tx*MakeStyles
+..

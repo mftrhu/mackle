@@ -1,0 +1,132 @@
+\#======================================
+\#              STYLE MACROS
+\#======================================
+.blm @nop
+
+.Macro SetStyle
+.  if \w|\\$2| .ds \\$1Font \\$2
+.  if \w|\\$3| .nr \\$1Size \\$3
+.  if \w|\\$4| .nr \\$1Lead \\$4
+.  if \w|\\$5| .ds \\$1Color \\$5
+.  if \w|\\$6| .ds \\$1Align \\$6
+.  if \w|\\$7| .nr \\$1PadLeft \\$7
+.  if \w|\\$8| .nr \\$1PadRight \\$8
+..
+
+.Macro Center
+.  br
+.  ad c
+..
+.Macro /Center
+.  br
+.  ad l
+..
+
+.Macro Left
+.  br
+.  ad l
+..
+.Macro /Left
+.  br
+.  ad l
+..
+
+.Macro @Align
+.  #push %alignment \\*[$current-align]
+.  ds $current-align \\$1
+.  if |\\$1|center| .Center
+.  if |\\$1|left|   .Left
+..
+
+.Macro /@Align
+.  ds r \\*[$current-align]
+.  #pop %alignment
+.  if |\\*r|center| .Center
+.  if |\\*r|left|   .Left
+.  ds $current-align \\*r
+\#.  ce 0
+\#.  rj 0
+..
+
+.Macro @Pad
+.  #pushN %pad-left (u;\\n[.i])
+.  #pushN %pad-right (u;\\n[.l])
+.  in \\$1
+.  ll -\\$2
+..
+
+.Macro /@Pad
+.  #popN %pad-left
+.  in -(u;\\nr)
+.  #popN %pad-right
+.  ll +(u;\\nr)
+..
+
+.Macro @Size
+.  #pushN %size \\n[.ps]u
+.  #pushN %lead \\n[.vs]u
+.  ps \\$1
+.  vs (\\$1+\\$2)
+..
+.Macro /@Size
+.  #popN %size
+.  ps \\n[r]u
+\#(\\nr/1000)
+.  #popN %lead
+.  vs (u;\\n[.ps]+\\n[r])
+\#(\\n[.ps]+\\nr/1000)
+..
+
+.Macro @Font
+.  #push %font \\*[$current-font]
+.  ds $current-font \\$1
+.  ft \\$1
+..
+.Macro /@Font
+.  #pop %font
+.  ds $current-font \\*r
+.  ft \\*r
+..
+
+.Macro @Color
+.  #push %color \\*[$current-color]
+.  ds $current-color \\$1
+.  gcolor \\$1
+..
+.Macro /@Color
+.  #pop %color
+.  ds $current-color \\*r
+.  gcolor \\*r
+..
+
+.Macro @SetStyle
+.  @Align \\*[\\$1Align]
+\#.  @Pad \\n[\\$1PadRight] \\n[\\$1PadLeft]
+.  @Size \\n[\\$1Size] \\n[\\$1Lead]
+.  @Font \\*[\\$1Font]
+.  @Color \\*[\\$1Color]
+..
+
+.Macro @ResetStyle
+.  /@Color
+.  /@Font
+.  /@Size
+\#.  /@Pad
+.  /@Align
+..
+
+.Macro NewStyle
+.  Macro \\$1Style /Macro
+.   SetStyle \\$*
+.  /Macro
+.  Macro @\\$1Style /Macro
+.    @SetStyle \\$1
+.  /Macro
+.  Alias /@\\$1Style @ResetStyle
+..
+
+.Macro @st*Init
+.  NewStyle Body
+.  SetStyle Body R 10 +2 black left 0i 0i
+.  @SetStyle Body
+..

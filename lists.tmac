@@ -1,0 +1,49 @@
+\# -*- nroff -*-
+\# Module li - Lists, numbered and unnumbered
+
+\# External variables
+.ds li*ul-chars \(bu \(en \(ci \(sq
+.ds li*nl-format 1. A. I. 1) a) i)
+
+.de split
+.  if \\$2>(\\n[.$]-3) .@error "\\$3 must have at least \\$2 values (\\*[\\$3]).
+.  nr hd*sp-tmp \\$2+2
+.  ds \\$1 \\$[\\n[hd*sp-tmp]]
+..
+
+\# Internal variables
+.nr @li*ul-level 0
+.nr @li*nl-level 0
+
+.de UnnumberedList
+.  nr @li*ul-level +1
+.  in +2.5n
+..
+
+.de /UnnumberedList
+.  in -2.5n
+.  nr @li*ul-level -1
+..
+
+.de ListItem
+.  br
+.  split @li*bullet \\n[@li*ul-level] \\*[li*ul-chars]
+.  nop \\Z|\\h"-2.5n"\\*[@li*bullet]|\\c
+..
+
+.de @li*Format
+.  if |\\$1|1.| .@li*ListFormat 1 .
+.  if |\\$1|<1>| .@li*ListFormat 1 > <
+..
+
+.de NLI
+.  br
+.  split @li*format \\n[@li*nl-level] \\*[li*nl-format]
+.  @li*Format \\n[@li*-]
+..
+
+.als UL UnnumberedList
+.als /UL /UnnumberedList
+.als NL NumberedList
+.als /NL /NumberedList
+.als LI ListItem

@@ -1,0 +1,220 @@
+\# -*- nroff -*-
+\########################################################################
+\######################### Module fn - Footnotes ########################
+\########################################################################
+
+
+\########################### External variables #########################
+.String fn*style 1        \" Format of the footnote numbers (1/a/A/i/I..)
+.Number fn*width 83       \" Percentage of total line width (def.: 5/6)
+.Number fn*hline (u;2i)   \" Width of the horizontal line, 0 if not drawn
+.Number fn*autonumber 0
+.Number fn*size 8p
+.Number fn*lead 2p
+.String * \\*{\\n[@fn*counter]\\*}
+
+
+\########################### Internal variables #########################
+.Number @fn*counter 1
+\# @fn*done is part of an @HACK necessary to make multiple columns work
+\#  properly together with footnotes (to not spit them out twice, or
+\#  after they got reset).
+.Number @fn*done 0
+\# Set at 1u because apparently `.wh -0` is read as `.wh 0`, which is
+\#   the exact opposite of what we want.
+.Number @fn*trap-pos \n[pg*margin-bottom]
+\# Total height of the footnotes collected 'till now (and of any notes
+\#   left over from the previous page for `@fn*next-height`).
+.Number @fn*height 0i
+\# The initial value of \v for `@fn*next-height` is an @HACK, necessary
+\#   to avoid issues with footnotes on the first page (only) not being
+\#   set properly and consequently intersecting with the footer.
+.Number @fn*next-height 0i
+\# `has-footnotes[-next]` are used to keep track of whether there are
+\#   any available footnotes, as apparently I can't check a diversion
+\#   for emptiness
+.Number @fn*has-footnotes 0
+.Number @fn*has-footnotes-next 0
+.Number @fn*total-lines 0
+
+
+\############################ Internal macros ###########################
+
+.Macro @fn*SetupEnv
+.  ll \\n[fn*width]u
+.  ps \\n[fn*size]u
+.  vs (u;\\n[fn*size] + \\n[fn*lead])
+..
+
+.Macro @fn*HorizontalLine
+.  if (\\n[fn*hline] > 0) \{\
+.    nop \D|p \\n[fn*hline]u 0|
+.  \}
+..
+
+.Macro @fn*UpdateCounter
+.  ds * \\*{\\n[@fn*counter]\\*}
+..
+
+.Macro @fn*ShowFootnotes
+\#.  tm ### @ShowFootnotes invoked (page \\n[%])
+.  nr @fn*done +1
+.  if (\\n[@fn*done]=1)&(\\n[@fn*has-footnotes]>0) \{\
+\#.    tm *** There are footnotes (\\n[@fn*has-footnotes])
+\#.    sp 1
+.    ev @fn*env
+\# Bit of an @HACK here too (.po), as it was working before... I'm not
+\#   really sure, but it was definitively working before *something*.
+\# I was messing around to get footnotes to show up properly with both
+\#   a single- and multiple-column layout.
+.      po \\n[pg*margin-left]u
+.      @fn*SetupEnv
+.      @fn*HorizontalLine
+.      unformat @fn*text
+.      nf
+.      @fn*text
+.      br
+.    ev
+.    @fn*ResetFootnotes
+\#.    NewPage
+.  \}
+..
+
+.Macro @fn*ResetFootnotes
+\#.  tm ### @fn*ResetFootnotes invoked
+.  nr @fn*done 0
+.  rm @fn*text
+.  nr @fn*height 0i
+.  nr @fn*total-lines 0
+.  nr @fn*has-footnotes 0
+.  if (\\n[@fn*has-footnotes-next] > 0) \{\
+\#   There are footnotes left over from the previous page, which are put
+\#   into @fn*text and then deleted.
+\#.    Trace |   There are leftover footnotes (\\n[@fn*has-footnotes-next])
+.    nr @fn*height \\n[@fn*next-height]
+.    ev @fn*env
+.      @fn*SetupEnv
+.      da @fn*text
+.        unformat @fn*text
+.        @fn*next
+\!.      br
+.        br
+.      di
+.    ev
+.    nr @fn*has-footnotes \\n[@fn*has-footnotes-next]
+.  \}
+.  nr @fn*has-footnotes-next 0
+.  nr @fn*next-height 0i
+.  rm @fn*next
+\# Remove the footnote trap
+\#.  wh -\\n[@fn*trap-pos]u
+\# And put it back in place if there are new footnotes
+.  ie (\\n[@fn*has-footnotes]>0) .@fn*PlaceTrap
+.  el .@fn*EmptyTrap
+.  @fn*UpdateCounter
+..
+
+.Macro @fn*EmptyTrap
+\#.  tm ### @fn*EmptyTrap invoked
+\#.  tm ------------------------------------------------------------
+\#.  tm There are no footnotes - AKA, place the column trap right at
+\#.  tm the bottom margin (\\n[pg*margin-bottom])
+\#.  tm Before:
+\#.  ptr
+\#.  tm
+.  nr @fn*trap-pos \\n[pg*margin-bottom]
+.  @mc*MoveTrap \\n[pg*margin-bottom]
+\#.  tm After:
+\#.  ptr
+\#.  tm ------------------------------------------------------------
+..
+
+.Macro @fn*PlaceTrap
+\#.  tm ### @fn*PlaceTrap invoked
+.  nr @fn*trap-pos (\\n[pg*margin-bottom]u + \\n[@fn*height]u)
+.  if (\\n[fn*hline] > 0) .nr @fn*trap-pos +1v
+\#.tm *** \n[@fn*counter] \\n[@fn*trap-pos]
+\#.  if (\\n[@fn*counter] = 2) .nr @fn*trap-pos +1v
+\#.  wh -3u @fn*ShowFootnotes
+\#.  ch @fn*ShowFootnotes -\\n[@fn*trap-pos]u
+\#.  tm Relocating - \\n[@fn*trap-pos] \\n[pg*margin-bottom] \\n[@fn*height]
+.  @mc*MoveTrap \\n[@fn*trap-pos]
+..
+
+\############################ External macros ###########################
+
+.Macro Footnote
+.  Trace Footnote \\n[@fn*counter] at page \\n%
+.  if (\\n[fn*autonumber] > 0) .nop \\*{\\n[@fn*counter]\\*}
+.  di @fn*temp
+.    ev @fn*env
+.      @fn*SetupEnv
+.      fi
+\!.    br
+.      br
+\# Should be shunted to a @fn*SetStyle, looking at -mm/-ms for inspiration
+.      ta 2n
+.      in 2n
+.      ti -2n
+.      nop \\n[@fn*counter].\t
+..
+
+.Macro /Footnote
+.      in
+\!.    br
+.      br
+.    ev
+.  di
+.  nr @fn*lines (\\n[dn]u / (u;\\n[fn*size] + \\n[fn*lead]))
+.  nr @fn*counter +1
+.  ie (\\n[@fn*trap-pos]=3) .nr @fn*old-pos \\n[pg*margin-bottom]
+.  el .nr @fn*old-pos \\n[@fn*trap-pos]
+.  nr @fn*new-pos (u;\\n[.p]u - (u;\\n[@fn*old-pos]u + \\n[dn]u))
+\#.  nr @fn*new-pos (u;\\n[.p]u - (u;\\n[@fn*trap-pos]u + \\n[dn]u) \" + \\n[fn*lead]u))
+.  ie (\\n[@fn*new-pos]u > \\n[.h]u) \{\
+.    nr @fn*has-footnotes +1
+.    nr @fn*total-lines +\\n[@fn*lines]
+.    if (\\n[@fn*has-footnotes]=1) .@fn*PlaceTrap
+.    nr @fn*height (u;\\n[@fn*height]u + \\n[dn]u)
+\"+ (\\n[@fn*lines] * \\n[fn*lead]u))
+\#.    tm \\n[@fn*lines]
+\#.    nr @fn*trap-pos (u;\\n[pg*margin-bottom]u + \\n[@fn*height]u +2v)
+\#.    nr @fn*trap-pos (u;\\n[pg*margin-bottom]u + 2v + \\n[@fn*total-lines]v)
+.    nr @fn*trap-pos (u;\\n[@fn*trap-pos]u + \\n[dn]u)
+\#.    ch @fn*ShowFootnotes -\\n[@fn*trap-pos]u
+.    @mc*MoveTrap \\n[@fn*trap-pos]
+.    ev @fn*env
+.      unformat @fn*temp
+.      da @fn*text
+.        @fn*SetupEnv
+.        @fn*temp
+\!.      br
+.        br
+.      da
+.    ev
+.  \}
+.  el \{\
+.    nr @fn*has-footnotes-next +1
+.    nr @fn*next-height (u;\\n[@fn*next-height]u + \\n[dn]u)
+.    ev @fn*env
+.      unformat @fn*temp
+.      da @fn*next
+.        @fn*SetupEnv
+.        @fn*temp
+\!.      br
+.        br
+.      da
+.    ev
+.  \}
+.  rm @fn*temp
+.  @fn*UpdateCounter
+..
+
+.Alias FS Footnote
+.Alias FE /Footnote
+
+.Macro @fn*Init
+.  af @fn*counter \\*[fn*style]
+.  nr fn*width (u;\\n[pg*line-length]u*\\n[fn*width]/100)
+.  @fn*ResetFootnotes
+..

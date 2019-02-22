@@ -1,0 +1,52 @@
+\# -*- nroff -*-
+\########################################################################
+\########################## Module en - Endnotes ########################
+\########################################################################
+
+
+\########################### External variables #########################
+.ds en*style a
+.nr en*autonumber 0
+
+
+\########################### Internal variables #########################
+.nr @en*counter 1
+
+
+\############################ External macros ###########################
+
+.de Endnote
+.  if (\\n[en*autonumber] > 0) .nop \\*{\\n[@en*counter]\\*}
+.  da @en*text
+.    ev @en*env
+.      fi
+.      br
+.      ta 2n
+.      nop \\n[@en*counter].\t
+..
+
+.de /Endnote
+.      br
+.    ev
+.  da
+.  nr @en*counter +1
+..
+
+.de Endnotes
+.  if !|\\$1|no| \{\
+.    sp
+.    ce
+.    B \\*[$ENDNOTES]
+.  \}
+.  br
+.  ev @en*env
+.    unformat @en*text
+.    nf
+.    @en*text
+.    br
+.  ev
+..
+
+.de @en*Init
+.  af @en*counter \\*[en*style]
+..

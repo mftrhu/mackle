@@ -1,0 +1,25 @@
+\# -*- nroff -*-
+
+.Macro EmptyLine
+\&
+..
+
+.Macro Code
+.  sp
+.  ps 9
+.  ft CR
+.  nm 1
+.  blm EmptyLine
+..
+
+.Macro /Code
+.  nm
+.  ps
+.  ft R
+.  sp
+.  SkipIndent
+.  blm @nop
+..
+
+\#.Alias PYGMENTS1 Code
+\#.Alias PYGMENTS2 /Code

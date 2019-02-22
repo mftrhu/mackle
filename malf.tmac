@@ -1,0 +1,32 @@
+\# -*- nroff -*-
+.blm @nop
+.so aliases.tmac
+.so strings.tmac
+.so arrays.tmac
+.so size.tmac
+.so page.tmac
+.so font.tmac
+.so style.tmac
+\".so columns.tmac
+.so footnotes.tmac
+.so endnotes.tmac
+.so text.tmac
+.so lists.tmac
+.so pdf.tmac
+
+\# Document types
+.so paper.tmac
+\#.so article.tmac
+\#.so letter.tmac
+\#.so resume.tmac
+\#.so book.tmac
+
+.Macro Start
+.  @si*Init    \" Initialize paper size
+.  @pg*Init    \" Initialize margins
+.  @ft*Init    \" Initialize fonts
+.  @st*Init    \" Initialize styles
+.  @fn*Init    \" Initialize footnotes
+.  @en*Init    \" Initialize endnotes
+.  @Init       \" Dispatched to the document type
+..

@@ -1,0 +1,75 @@
+\#======================================
+\# UTILITY FUNCTIONS - ARRAYS & STACKS
+\#======================================
+
+\# In this implementation, arrays/stacks start at 1 and any results
+\# from operations like #pop and #len will be put in register r.
+
+.Macro #new-array
+.  nr \\$1-len 0
+..
+
+.Macro #push
+\# $1 is the array name
+\# $2 is the item to push
+.  if !r \\$1-len .#new-array \\$1
+.  nr \\$1-len +1
+.  ds \\$1-val-\\n[\\$1-len] \\$2
+..
+.Alias #append #push
+
+.Macro #pushN
+.  if !r \\$1-len .#new-array \\$1
+.  nr \\$1-len +1
+.  nr \\$1-val-\\n[\\$1-len] \\$2
+..
+.Alias #appendN #pushN
+
+.Macro #pop
+\# $1 is the array name
+\# The result is put into \*r
+.  ie (\\n[\\$1-len] < 1) .tm Error: stack underflow (\\$1)
+.  el \{\
+.    ds r \\*[\\$1-val-\\n[\\$1-len]]
+.    rm \\$1-val-\\n[\\$1-len]
+.    nr \\$1-len -1
+.  \}
+..
+
+.Macro #popN
+.  ie (\\n[\\$1-len] < 1) .tm Error: stack underflow (\\$1)
+.  el \{\
+.    nr r \\n[\\$1-val-\\n[\\$1-len]]
+.    rm \\$1-val-\\n[\\$1-len]
+.    nr \\$1-len -1
+.  \}
+..
+
+.Macro #len
+\# $1 is the array name
+\# The result is put into \nr
+.  nr r \\n[\\$1-len]
+..
+
+.Macro #for-each
+\# $1 is the array name
+\# $2 is the macro to execute (it will receive the current array,
+\#   index and element as parameters)
+.  nr i 1
+.  while (\\ni <= \\n[\\$1-len]) \{\
+.    \\$2 \\$1 \\ni \\*[\\$1-val-\\ni]
+.    nr i +1
+.  \}
+..
+
+.Macro #map
+\#TODO
+..
+
+.Macro #filter
+\#TODO
+..
+
+.Macro #shift
+\#TODO: shift the array down by one position
+..

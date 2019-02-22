@@ -1,0 +1,94 @@
+\# -*- nroff -*-
+\########################################################################
+\###################### Module fn - Font management #####################
+\########################################################################
+
+
+\########################### External variables #########################
+.ds ft*main Times
+.ds ft*alt Helvetica
+.ds ft*code Courier
+
+
+\########################### Internal variables #########################
+.nr @ft*main-font-set 0
+.nr @ft*code-font-set 0
+.nr @ft*alt-font-set 0
+
+
+\############################ Internal macros ###########################
+
+.de @ft*Translate
+.  ds @ft*r \\$1
+.  if |\\$1|AvantGarde| .ds @ft*r A
+.  if |\\$1|Bookman| .ds @ft*r BM
+.  if |\\$1|Courier| .ds @ft*r C
+.  if |\\$1|Helvetica| .ds @ft*r H
+.  if |\\$1|HelveticaNarrow| .ds @ft*r HN
+.  if |\\$1|NewCenturySchlbk| .ds @ft*r N
+.  if |\\$1|Palatino| .ds @ft*r P
+.  if |\\$1|Times| .ds @ft*r T
+..
+
+\############################ External macros ###########################
+
+.de MainFont
+.  nr @ft*main-font-set 1
+.  ds ft*main \\$1
+.  fp 1 \\$1R
+.  fp 2 \\$1I
+.  fp 3 \\$1B
+.  fp 4 \\$1BI
+.  ftr R \\$1R
+.  ftr I \\$1I
+.  ftr B \\$1B
+.  ftr BI \\$1BI
+..
+
+.de CodeFont
+.  nr @ft*code-font-set 1
+.  ds ft*code \\$1
+.  fp 5 \\$1R
+.  fp 6 \\$1I
+.  fp 7 \\$1B
+.  fp 8 \\$1BI
+.  ftr CR \\$1R
+.  ftr CI \\$1I
+.  ftr CB \\$1B
+.  ftr CBI \\$1BI
+..
+
+.de AltFont
+.  nr @ft*alt-font-set 1
+.  ds ft*alt \\$1
+.  fp 9 \\$1R
+.  fp 10 \\$1I
+.  fp 11 \\$1B
+.  fp 12 \\$1BI
+.  ftr AR \\$1R
+.  ftr AI \\$1I
+.  ftr AB \\$1B
+.  ftr ABI \\$1BI
+..
+
+.de AdjustFont
+.  fzoom \\$1R \\$2
+.  fzoom \\$1I \\$2
+.  fzoom \\$1B \\$2
+.  fzoom \\$1BI \\$2
+..
+
+.de @ft*Init
+.  if (\\n[@ft*main-font-set] = 0) \{\
+.    @ft*Translate \\*[ft*main]
+.    MainFont \\*[@ft*r]
+.  \}
+.  if (\\n[@ft*code-font-set] = 0) \{\
+.    @ft*Translate \\*[ft*code]
+.    CodeFont \\*[@ft*r]
+.  \}
+.  if (\\n[@ft*alt-font-set] = 0) \{\
+.    @ft*Translate \\*[ft*alt]
+.    AltFont \\*[@ft*r]
+.  \}
+..

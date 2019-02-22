@@ -1,0 +1,139 @@
+\# -*- nroff -*-
+\########################################################################
+\###################         Module Dictionary         ##################
+\################### Macro set for dictionary creation ##################
+\########################################################################
+
+.Number @Dictionary*footer-done 0
+
+\############################ Internal macros ###########################
+
+.Macro @Dictionary*Header
+.  tm Dictionary header reached at page \\n[%]
+.  nr @pg*page-broken 0
+.  sp (u;\\n[pg*margin-top]u - \\n[pg*padding-top]u - 1v)
+.  mk @Dictionary*header-position
+.  sp (u;\\n[pg*padding-top]u + 1v)u
+.  rm @Dictionary*first-word
+.  nr @mc*column-done 0
+..
+
+.Macro @Dictionary*Footer
+\#.tm Dictionary footer reached at page \\n[%]
+\#.tm It was done - \\n[@Dictionary*footer-done] (0=true)
+.  ie (\\n[@Dictionary*footer-done]=0) \{\
+\#.tm Printing it...
+.    sp \\n[pg*padding-bottom]u
+.    ev @pg*footer-env
+.      @pg*SetupEnv
+.      HorizontalRule
+.      sp
+.      tl \\*[@pg*footer]
+.    ev
+.    rt \\n[@Dictionary*header-position]u
+.    ev @pg*header-env
+.      @pg*SetupEnv
+.      tl |\\*[@Dictionary*first-word]||\\*[@Dictionary*last-word]|
+.      HorizontalRule
+.    ev
+.    nr @Dictionary*footer-done 1
+.    nr @mc*skip-columns 1
+\#.tm Removing the column trap at position \\n[@mc*trap-pos]
+\#.ptr
+\#.    wh -\\n[@mc*trap-pos]u
+\#.tm After
+\#.ptr
+\#.tm Breaking the page...
+.    NewPage
+\# This to avoid column issues, as we will swing by the columns trap
+\#   for a second time
+\#.ptr
+\#.    bp
+\#.    nr @Dictionary*footer-done 0
+\#.    @mc*SetTrap -\\n[@mc*trap-pos]u
+.  \}
+.  el .nr @Dictionary*footer-done 0
+..
+
+.Macro @Dictionary*Word
+.  if !d@Dictionary*first-word .ds @Dictionary*first-word \\$1
+.  ds @Dictionary*last-word \\$1
+.  br
+.  ti +2n
+.  Bold \\$1
+.  if (\\n[.$]>1) \{\
+.    Roman \\$2 ) (
+.    Italic \\$3
+.  \}
+.  nop \\(bu
+.  nr @Dictionary*current-definition 1
+.  ne 2
+..
+
+.Macro @Dictionary*Definition
+.  if (\\n[@Dictionary*current-definition]>1) .nop \\(bu
+.  nop \\f[B]\\n[@Dictionary*current-definition]\\f[P]\\h|0.5n|
+.  nr @Dictionary*current-definition +1
+.  ne 2
+..
+
+.Macro @Dictionary*Kind
+.  br
+.  ti +2n
+.  Italic \\$1
+.  nop \\(bu
+.  nr @Dictionary*current-definition 1
+..
+
+.Macro @Dictionary*Synonym
+.  nop (syn.:
+.  nr i 0
+.  nr t (\\n[.$]-1)
+.  Smallcaps
+.  while (\\n[i]<\\n[t]) \{\
+.    nop \\$1,
+.    shift 1
+.    nr i +1
+.  \}
+.  nop \\$1)
+.  /Smallcaps
+..
+
+.Macro @Dictionary*Example
+.  nop \\(en \\f[I]\\$*\\f[P]
+..
+
+.Macro @Dictionary*Heading
+.  tm *** Switching to one-column layout (heading \\$1)
+.  OneColumn
+.  br
+.  sp 1v
+.  @SetStyle Heading
+.  nop \\f[B]\\$1\\f[P]
+.  br
+.  @ResetStyle
+.  sp 1v
+.  tm *** Switching back to two-columns layout
+.  TwoColumns
+..
+
+.Macro @Dictionary*Init
+.  TwoColumns
+..
+
+\############################ External macros ###########################
+
+.Macro Dictionary
+.  Alias @pg*Header @Dictionary*Header
+.  Alias @pg*Footer @Dictionary*Footer
+.  Alias @Init @Dictionary*Init
+.  Alias Heading @Dictionary*Heading
+.  Alias Word @Dictionary*Word
+.  Alias Definition @Dictionary*Definition
+.  Alias Kind @Dictionary*Kind
+.  Alias Synonym @Dictionary*Synonym
+.  Alias Example @Dictionary*Example
+.  if (\\n[.$]>0) .PaperSize \\$1
+.  if (\\n[.$]>1) .MainFont \\$2
+.  SetStyle Heading B 20 +0 black center
+..

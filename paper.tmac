@@ -1,0 +1,139 @@
+\# -*- nroff -*-
+\########################################################################
+\#################              Module Paper             ################
+\################# Macro set for a simple academic paper ################
+\########################################################################
+
+\############################ Internal macros ###########################
+
+.Macro Paper*Title
+.  ds doc*title \\$1
+..
+
+.Macro Paper*Subtitle
+.  ds doc*subtitle \\$1
+..
+
+.Macro Paper*Date
+.  ds doc*date \\$1
+..
+
+.Macro Paper*Author
+.  ds doc*author \\$1
+..
+
+.de Paper*Subject
+.  ds doc*subject \\$1
+..
+
+.de Paper*Keywords
+.  ds doc*keywords \\$1
+.  shift 1
+.  while (\\n[.$] > 0) \{\
+.    ds doc*keywords \\*[doc*keywords] \\$1
+.    shift 1
+.  \}
+..
+
+.Macro @Paper*Abstract
+.  ie (\\n[.$]>0) .ds @Paper*abstract-title \\$1
+.  el .ds @Paper*abstract-title \\*[$ABSTRACT]
+.  di doc*abstract
+.    ev @abstract-env
+.      nh
+.      @SetStyle Abstract
+.      ft R
+..
+
+.Macro @Paper*/Abstract
+.      br
+.      @ResetStyle
+.    ev
+.  di
+..
+
+.Number @Paper*ab-margin-left 0.75i
+.Number @Paper*ab-margin-right 0.75i
+
+.Macro @Paper*AbstractMargins
+.  if (\\n[.$]=1) \{\
+.    nr @Paper*ab-margin-left \\$1
+.    nr @Paper*ab-margin-right \\$1
+.  \}
+.  if (\\n[.$]>1) \{\
+.    nr @Paper*ab-margin-left \\$1
+.    nr @Paper*ab-margin-right \\$2
+.  \}
+..
+
+.Macro @Paper*Cover
+.  @SetStyle Title
+.  in +\\n[@Paper*ab-margin-left]u
+.  ll -\\n[@Paper*ab-margin-right]u
+.  nh
+.  nop \\*[doc*title]
+.  br
+.  @ResetStyle
+.  if d doc*subtitle \{\
+.    sp 1v
+.    @SetStyle Subtitle
+.    nop \\*[doc*subtitle]
+.    @ResetStyle
+.  \}
+.  if d doc*author \{\
+.    sp 1v
+.    @SetStyle Author
+.    nop by
+.    br
+.    nop \\*[doc*author]
+.    @ResetStyle
+.  \}
+.  hy
+.  ll
+.  in
+.  if d doc*abstract \{\
+.    sp 2v
+\#.    ce
+.    @SetStyle AbstractTitle
+.    nop \\*[@Paper*abstract-title]
+.    br
+.    @ResetStyle
+.    ev @abstract-env
+.      fi
+.      in +\\n[@Paper*ab-margin-left]u
+.      ll \\n[pg*line-length]u
+.      ll -\\n[@Paper*ab-margin-right]u
+.      @SetStyle Abstract
+.      unformat doc*abstract
+.      doc*abstract
+.      @ResetStyle
+.    ev
+.  \}
+.  sp 2v
+..
+
+.Macro @Paper*Init
+.  @Paper*Cover
+..
+
+\############################ External macros ###########################
+
+.Macro Paper
+.  Alias @Init @Paper*Init
+.  Alias Title Paper*Title
+.  Alias Subtitle Paper*Subtitle
+.  Alias Date Paper*Date
+.  Alias Author Paper*Author
+.  Alias AbstractMargins @Paper*AbstractMargins
+.  Alias AbMargins @Paper*AbstractMargins
+.  Alias Abstract @Paper*Abstract
+.  Alias /Abstract @Paper*/Abstract
+.  DefColor gray rgb 0.4 0.4 0.4
+.  SetStyle Title B 24 +0 black center 0i 0i
+.  SetStyle Subtitle B 16 +2 gray center 0i 0i
+.  SetStyle Author I 10 +2 black center 0i 0i
+.  SetStyle Abstract R 9 +2 black left 0i 0i
+.  SetStyle AbstractTitle I 10 +2 black center 0i 0i
+.  if (\\n[.$]>0) .PaperSize \\$1
+.  if (\\n[.$]>1) .MainFont \\$2
+..

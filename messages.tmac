@@ -1,0 +1,21 @@
+\# -*- nroff -*-
+\# Debugging macros
+
+\# External variables
+.nr debug*level 4
+
+.Macro Error
+.  if (\\n[debug*level] > 0) .tm ERROR: \\$*
+..
+
+.Macro Debug
+.  if (\\n[debug*level] > 1) .tm DEBUG: \\$*
+..
+
+.Macro Info
+.  if (\\n[debug*level] > 2) .tm INFO:  \\$*
+..
+
+.Macro Trace
+.  if (\\n[debug*level] > 3) .tm TRACE: \\$*
+..

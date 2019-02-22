@@ -1,0 +1,20 @@
+\# -*- nroff -*-
+
+.Macro TS
+.  sp 0.5v
+.  vs +2
+.  if \\w|\\$1| .ds @tb*caption \\$1
+..
+
+.Macro TE
+.  vs
+.  br
+.  if \\w|\\*[@tb*caption]| \{\
+.    Center
+.    nop \\*[@tb*caption]
+.    /Center
+.    rm @tb*caption
+.  \}
+.  sp 0.5v
+.  nr @tx*after-header 0
+..

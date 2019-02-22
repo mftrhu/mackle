@@ -1,0 +1,42 @@
+\# -*- nroff -*-
+.blm @nop
+.so aliases.tmac
+.so strings.tmac
+.so arrays.tmac
+.so size.tmac
+.so page.tmac
+.so font.tmac
+.so style.tmac
+.so columns.tmac
+.so footnotes.tmac
+.so endnotes.tmac
+.so text.tmac
+.so lists.tmac
+.so code.tmac
+.so tables.tmac
+.so pdf.tmac
+
+\# Document types
+.so paper.tmac
+.so dictionary.tmac
+\#.so article.tmac
+\#.so letter.tmac
+\#.so resume.tmac
+\#.so book.tmac
+
+.Macro Start
+.  @si*Init    \" Initialize paper size
+.  @pg*Init    \" Initialize margins
+.  @ft*Init    \" Initialize fonts
+.  @st*Init    \" Initialize style macros
+.  @tx*Init    \" Initialize text styles
+.  @Init       \" Dispatched to the document type
+.  @pdf*Init   \" Initialize pdf metadata
+\# Init might output some text (a cover, for example), so columns & co
+\#   must be initialized afterwards.  As a result they won't be available
+\#   within the cover.
+.  @mc*Init    \" Initialize columns
+.  @fn*Init    \" Initialize footnotes
+.  @en*Init    \" Initialize endnotes
+.  nr StartDone 1
+..

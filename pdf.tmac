@@ -1,0 +1,40 @@
+\# -*- nroff -*-
+\# Module pdf - Easy pdf outlines & metadata
+
+.Macro Meta
+\# Usage: .Meta Type Data
+.  pdfmark /\\$1 (\\$2) /DOCINFO
+..
+
+.Macro Subject
+.  ds doc*subject \\$1
+..
+
+.Macro Keywords
+.  ds doc*keywords \\$1
+.  shift 1
+.  while (\\n[.$] > 0) \{\
+.    ds doc*keywords \\*[doc*keywords] \\$1
+.    shift 1
+.  \}
+..
+
+.Macro LinkColor
+.  ds PDFHREF.COLOUR \\$1 \\$2 \\$3
+.  defcolor pdf:href.colour rgb \\*[PDFHREF.COLOUR]
+..
+
+.Macro @pdf*Heading
+.  nr @pdf*level \\$1
+.  ds @pdf*text \\$2
+.  pdfhref O \\n[@pdf*level] \\*[@pdf*text]
+..
+
+.Macro @pdf*Init
+.  Meta Title "\\*[doc*title]"
+.  if d doc*author .Meta Author "\\*[doc*author]"
+.  if d doc*subject .Meta Subject "\\*[doc*subject]"
+.  if d doc*keywords .Meta Keywords "\\*[doc*keywords]"
+\# Takes care of incorporating the whole outline at the end of input.
+.  em pdfsync
+..

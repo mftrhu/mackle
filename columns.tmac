@@ -1,0 +1,230 @@
+\# -*- nroff -*-
+\########################################################################
+\###################### Module mc - Multiple columns ####################
+\########################################################################
+
+.ig Desc
+What is needed by a multiple columns module?
+
+Well, a macro that takes care of setting the appropriate variables - the
+number of columns, their width, and the width of the gutter.
+
+Then a macro that must be invoked by a trap at the end of the page, which
+takes care of:
+
+ 1. checking whether we are at the last column, and if so breaking the
+    page to go to the first column;
+ 2. otherwise going to the next column, while moving the cursor to the
+    appropriate position (to the Y where the columns began, increasing
+    the page offset by the width + gutter).
+
+And finally, a macro - to be invoked from other macros - that can move
+this trap as needed (to be used by things like footnotes).
+
+PITFALLS TO WATCH FOR
+
+ - When changing columns from one to two or viceversa we also need to
+   keep track of the lowest point the columns got to, ever.
+   As in - if setting 2C to switch to 1C, if the first column was not
+   completed we can simply switch partway within the page.  But if the
+   first column **was completed** we can't rely on the current position,
+   because that column got to the end of the page - as such, we need to
+   go there (and break the page) to start the single-column layout.
+
+.Desc
+
+\########################### External variables #########################
+.Number mc*columns 1
+.Number mc*gutter 2m
+
+
+\########################### Internal variables #########################
+.Number @mc*columns-count 1
+.Number @mc*current-column 1
+.Number @mc*column-width \n[pg*line-length]u
+.Number @mc*gutter-width \n[mc*gutter]u
+\# @mc*done contains 1 if a column was fully filled - that is, if it was
+\#   broken "naturally" by getting to the trap at the bottom of the page.
+.Number @mc*column-done 0
+\# @mc*max-position should contain the position that the multi-columns
+\#   layout reached within the current page - the end of the page if a
+\#   column was already completed, *or* the current high water mark
+\#   otherwise.
+.Number @mc*max-position 0u
+\# @mc*start-position is set when the column layout is changed, to be
+\#   able to go back to it when a new column is started
+.Number @mc*start-position 0u
+.Number @mc*trap-pos 1u
+
+
+\############################ Internal macros ###########################
+
+.Macro @mc*SetVars
+.  nr mc*columns \\$1
+.  nr mc*gutter \\$2
+..
+
+.Macro @mc*SavePosition
+.  mk @mc*start-position
+..
+
+.Macro @mc*CheckPosition
+\# Takes care of checking whether the page should be broken or not, and
+\#   handles it as needed.
+\#.  tm Checking position... \\n[@mc*column-done]
+.  ie (\\n[@mc*column-done]=1) \{\
+\#.    tm The end of the page was reached
+.    nr @mc*column-done 0
+.    NewPage
+.  \}
+.  el \{\
+\# We are changing column layout partway through the page - move to the
+\#   lowest position achieved by the previous columns.
+\# THIS SHIT HAS @BUGS
+\#.    tm The end of the page *was not* reached
+.    br
+.    mk @mc*current-position
+.    nr @mc*vdelta (u;\\n[@mc*max-position] - \\n[@mc*current-position])
+.    if (\\n[@mc*vdelta] < 0) \{\
+.      nr @mc*vdelta -\\n[@mc*vdelta]
+.    \}
+.    sp +\\n[@mc*vdelta]u
+\# Any after-column padding should go here @TODO
+.  \}
+..
+
+.Macro @mc*Columns
+\#.  @mc*SavePosition
+.  @mc*CheckPosition
+.  @mc*SavePosition
+.  nr @mc*columns-count \\$1
+.  nr @mc*gutter-width \\$2
+.  nr @mc*total-gutter-width (u;(\\n[@mc*columns-count] - 1) * \\n[@mc*gutter-width])
+.  nr @mc*available-width (u;\\n[pg*line-length] - \\n[@mc*total-gutter-width])
+.  nr @mc*column-width (\\n[@mc*available-width]u / \\n[@mc*columns-count])
+.  nr @mc*current-column 1
+.  @mc*NextColumn
+..
+
+.Macro @mc*NextColumn
+\# Moves to where the columns began on this page, increase po and ll
+\#  appropriately
+.  mk @mc*current-position
+.  if (\\n[@mc*current-position]>\\n[@mc*max-position]) \{\
+\#.    tm New max position \\n[@mc*current-position]
+.    nr @mc*max-position (u;\\n[@mc*current-position]u+1v)
+.  \}
+.  tm RETURNING TO START
+.  rt \\n[@mc*start-position]u
+.  nr @mc*delta (u;(\\n[@mc*current-column] - 1) * (\\n[@mc*column-width] + \\n[@mc*gutter-width]))
+.  po (u;\\n[pg*margin-left] + \\n[@mc*delta])
+.  ll \\n[@mc*column-width]u
+.  nr @tx*already-padded 1
+..
+
+.Macro @mc*NextPage
+\# Resets the left margin and line length before jumping to the next page
+\#   to avoid issues with the headers/footers.
+.tm Going to the next page
+.  po \\n[pg*margin-left]u
+.  ll \\n[pg*line-length]u
+\# This is an @hack, I need to revise this code to understand why it
+\#   behaves differently with one columns and more than one.
+\#.  ie (\\n[@mc*columns-count] = 1) \{\
+\#.    wh -\\n[@fn*trap-pos]u
+\#.    @fn*ShowFootnotes
+\#.  \}
+\#TODO: this should be fixed by not creating a footnotes trap, shunting
+\#  it onto the columns trap.
+\#.  wh -\\n[@fn*trap-pos]u
+\#.tm Going to the next page (from \\n[%]), trap position at: \\n[@fn*trap-pos]
+\#.ptr
+\#.  br
+\#.ne 2
+\#.ptr
+\#.  HR
+\#.  tm There are \\n[@fn*has-footnotes] footnotes here
+.  if (\\n[@fn*has-footnotes]>0) .@fn*ShowFootnotes
+\#.tm Done
+\# Save the position on the new page and start at the first column.
+.  nr @mc*current-column 1
+.  nr @mc*column-done 0
+.ptr
+.  br
+\#.  bp
+\#.  tm *** Going to the next page (\\n[@mc*column-done])
+.  @mc*SavePosition
+.  @mc*NextColumn
+\#.  tm *** On the next page (\\n[@mc*column-done])
+..
+
+.Macro @mc*ColumnDone
+\# Invoked when the text reaches the end of the page, takes care of
+\#   either moving to the next column (while setting @mc*max-position)
+\#   or to the next page.
+\#.ptr
+.tm Skipping columns? \\n[@mc*skip-columns]
+.  if (\\n[@mc*skip-columns]=0) \{\
+.tm Column \\n[@mc*current-column] done on page \\n[%]
+.tm Columns count: \\n[@mc*columns-count]
+.    nr @mc*current-column +1
+.    nr @mc*column-done 1
+.    ie (\\n[@mc*current-column]>\\n[@mc*columns-count]) .@mc*NextPage
+.    el .@mc*NextColumn
+.  \}
+.  el \{\
+.    nr @mc*skip-columns 0
+.  \}
+..
+
+.Macro @mc*SetTrap
+\#.  tm *** Setting trap at \\$1
+.  wh -5u @mc*ColumnDone
+.  @mc*MoveTrap \\$1
+\#.  wh \\$1 @mc*ColumnDone
+\#.  nr @mc*trap-pos \\$1
+..
+
+.Macro @mc*MoveTrap
+.  ch @mc*ColumnDone -(u;\\$1+1)
+.  nr @mc*trap-pos (u;\\$1+1)
+\#.  tm *** Trap moved:
+\#.  ptr
+..
+
+\############################ External macros ###########################
+
+.Macro NextColumn
+\# Jumps immediately to the next column.
+.  br
+.  nr @mc*current-column +1
+.  @mc*NextColumn
+..
+
+.Macro Columns
+\# Syntax: .Columns NUMBER [GUTTER]
+\# Dispatches the appropriate macro depending on whether .Start was
+\#  invoked or not (the layout is changed only if true, otherwise the
+\#  appropriate variables are set to be handled by @mc*Init).
+.  ie \\n[StartDone] .@mc*Columns \\$1 \\$2
+.  el .@mc*SetVars \\$1 \\$2
+..
+
+.Macro OneColumn
+.  Columns 1 0u
+..
+
+.Macro TwoColumns
+.  Columns 2 \\n[mc*gutter]u
+..
+
+.Alias 1C OneColumn
+.Alias 2C TwoColumns
+.Alias MC Columns
+
+.Macro @mc*Init
+.  mk @mc*max-position
+.  @mc*Columns \\n[mc*columns] \\n[mc*gutter]u
+.  @mc*SetTrap \\n[pg*margin-bottom]u
+.ptr
+..

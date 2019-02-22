@@ -1,0 +1,151 @@
+\# -*- nroff -*-
+\########################################################################
+\################## Module pg - Margins and page layout #################
+\########################################################################
+
+
+\########################### External variables #########################
+.Number pg*margin-top 1i
+.Number pg*padding-top 2v
+.Number pg*margin-bottom 1i
+.Number pg*padding-bottom 1v
+.Number pg*margin-left 1i
+.Number pg*margin-right 1i
+.Number pg*line-length (\n[si*width] - \n[pg*margin-left] - \n[pg*margin-right])
+
+
+\########################### Internal variables #########################
+.Number @pg*page-broken 0
+.Number @pg*margins-set 0
+.String @pg*header ||||
+.String @pg*footer ||- % -||
+
+\############################ Internal macros ###########################
+
+
+\############################ External macros ###########################
+
+.de NewPage
+\# Can be invoked multiple times per page, breaking the page and ensuring
+\#   this happens only once per page.
+.  nr @pg*page-broken +1
+.  if (\\n[@pg*page-broken] = 1) \{\
+.    bp
+\#.    nop \\h"|(u;\\n[pg*margin-bottom]u-1u)u"
+.  \}
+..
+
+\# Margin setter macros
+\#TODO: possibly check whether .Start was invoked or not, and if it was
+\#  set the margins straight away (even if changing margins partway the
+\#  document is probably one of the things that Shouldn't Be Done™).
+
+.de PaddingTop
+.  nr pg*padding-top \\$1
+..
+
+.de PaddingBottom
+.  nr pg*padding-bottom \\$1
+..
+
+.de MarginTop
+.  nr @pg*margins-set +1
+.  nr pg*margin-top \\$1
+..
+
+.de MarginBottom
+.  nr @pg*margins-set +1
+.  nr pg*margin-bottom \\$1
+..
+
+.de MarginLeft
+.  nr @pg*margins-set +1
+.  nr pg*margin-left \\$1
+..
+
+.de MarginRight
+.  nr @pg-margins-set +1
+.  nr pg*margin-right \\$1
+..
+
+.de @pg*SetMargins
+.  MarginTop \\$1
+.  MarginBottom \\$2
+.  MarginLeft \\$3
+.  MarginRight \\$4
+..
+
+.de Margins
+.  if (\\n[.$] = 1) .@pg*SetMargins \\$1 \\$1 \\$1 \\$1
+.  if (\\n[.$] = 2) .@pg*SetMargins \\$1 \\$1 \\$2 \\$2
+.  if (\\n[.$] = 4) .@pg*SetMargins \\$1 \\$2 \\$3 \\$4
+..
+
+\# Header & footer macros
+
+.de @pg*SetupEnv
+.  po \\n[pg*margin-left]u
+.  ll \\n[pg*line-length]u
+.  lt \\n[pg*line-length]u
+..
+
+.de Header
+.  ds @pg*header \\$*
+..
+
+.de @pg*Header
+.  nr @pg*page-broken 0
+.  sp (u;\\n[pg*margin-top]u - \\n[pg*padding-top]u - 1v)
+.  ev @pg*header-env
+.    @pg*SetupEnv
+.    tl \\*[@pg*header]
+.  ev
+.  sp \\n[pg*padding-top]u
+..
+
+.de Footer
+.  ds @pg*footer \\$*
+..
+
+.de @pg*Footer
+.  tm Footer reached on page \\n[%]
+.  sp \\n[pg*padding-bottom]u
+.  ev @pg*footer-env
+.    @pg*SetupEnv
+.    tl \\*[@pg*footer]
+\#.    sp (u;\\n[pg*margin-bottom]u - \\n[pg*padding-bottom]u - 1v)
+.  ev
+.  bp
+..
+
+\# Macros to actually modify the page and set the various traps
+
+.de @pg*MarginTop
+.  wh 0 @pg*Header
+..
+
+.de @pg*MarginBottom
+.  wh -(u;\\n[pg*margin-bottom]) @pg*Footer
+..
+
+.de @pg*MarginLeft
+.  po \\n[pg*margin-left]u
+.  ll -\\n[pg*margin-left]u
+.  lt -\\n[pg*margin-left]u
+.  nr pg*line-length \\n[.l]
+..
+
+.de @pg*MarginRight
+.  ll -\\n[pg*margin-right]u
+.  lt -\\n[pg*margin-right]u
+.  nr pg*line-length \\n[.l]
+..
+
+\# Initialization macro
+
+.de @pg*Init
+.  @pg*MarginTop
+.  @pg*MarginBottom
+.  @pg*MarginLeft
+.  @pg*MarginRight
+..
